@@ -26,7 +26,7 @@ trait LobbyService extends Service {
         restCall(PUT, apiUrl("admin/tables/:id"), updateTable _),
         restCall(DELETE, apiUrl("admin/tables/:id"), removeTable _),
         restCall(GET, apiUrl("user/tables"), getTables _),
-        restCall(GET, apiUrl("ping/:seq"), getPing _)
+        restCall(GET, apiUrl("user/ping/:seq"), getPing _)
       )
       .withAutoAcl(true)
   }

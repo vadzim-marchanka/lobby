@@ -5,9 +5,9 @@ import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 
 import scala.concurrent.ExecutionContext
 
-trait CallCompositions {
+trait StatusCodeHelper {
 
-  def withAcceptedResponse[Request, Response](
+  def withAcceptedStatusCode[Request, Response](
                                                call: ServerServiceCall[Request, Response]
                                              )(implicit ec: ExecutionContext): ServerServiceCall[Request, Response] =
     ServerServiceCall { (_, request) =>
