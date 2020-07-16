@@ -2,15 +2,15 @@ package com.marchanka.lobby.impl.tables
 
 import akka.persistence.typed.scaladsl.{Effect, ReplyEffect}
 import com.marchanka.lobby.impl.tables.TablesCommands._
-import com.marchanka.lobby.impl.tables.TablesPersistence.{TableAdded, TableRemoved, TableUpdated, TablesEvent, TablesState}
+import com.marchanka.lobby.impl.tables.TablesPersistence._
 
 trait TablesHandler {
   this: TablesState =>
 
   def applyCommand(cmd: TablesCommand): ReplyEffect[TablesEvent, TablesState] =
     cmd match {
-      case AddTable(id, name, participants) =>
-        Effect.persist(TableAdded(id, name, participants)).thenNoReply()
+      case AddTable(afterId, id, name, participants) =>
+        Effect.persist(TableAdded(afterId, id, name, participants)).thenNoReply()
       case UpdateTable(id, name, participants) =>
         Effect.persist(TableUpdated(id, name, participants)).thenNoReply()
       case RemoveTable(id) =>
@@ -21,11 +21,19 @@ trait TablesHandler {
 
   def applyEvent(evt: TablesEvent): TablesState =
     evt match {
-      case TableAdded(id, name, participants) =>
-        this.copy(tables = this.tables :+ TablesPersistence.Table(id, name, participants))
+      case TableAdded(afterId, id, name, participants) =>
+        val newTable = TablesPersistence.Table(id, name, participants)
+        val reorderedTables: Vector[TablesPersistence.Table] = afterId match {
+          case -1 => newTable +: this.tables
+          case _ =>
+            val (front, back) = tables.splitAt(tables.indexWhere(_.id == afterId) + 1)
+            (front :+ newTable) ++ back
+        }
+        this.copy(tables = reorderedTables)
       case TableUpdated(id, name, participants) =>
-        val filteredTables = this.tables.filter(_.id != id)
-        this.copy(tables = filteredTables :+ TablesPersistence.Table(id, name, participants))
+        val (front, back) = tables.splitAt(tables.indexWhere(_.id == id))
+        val updatedTable = TablesPersistence.Table(id, name, participants)
+        this.copy(tables = (front :+ updatedTable) ++ back.tail)
       case TableRemoved(id) =>
         val filteredTables = this.tables.filter(_.id != id)
         this.copy(tables = filteredTables)

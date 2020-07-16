@@ -4,7 +4,7 @@ import play.api.libs.json.{Format, Json}
 
 object Schemas {
 
-  case class AddTable(id: Int, name: String, participants: Int)
+  case class AddTable(afterId: Int, id: Int, name: String, participants: Int)
 
   object AddTable {
     implicit val format: Format[AddTable] = Json.format[AddTable]

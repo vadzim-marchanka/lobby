@@ -15,7 +15,7 @@ object TablesPersistence {
     val Tag: AggregateEventTag[TablesEvent] = AggregateEventTag[TablesEvent]
   }
 
-  case class TableAdded(id: Int, name: String, participants: Int) extends TablesEvent
+  case class TableAdded(afterId: Int, id: Int, name: String, participants: Int) extends TablesEvent
 
   case class TableUpdated(id: Int, name: String, participants: Int) extends TablesEvent
 

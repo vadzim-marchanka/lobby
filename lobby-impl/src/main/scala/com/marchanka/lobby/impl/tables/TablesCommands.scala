@@ -11,7 +11,7 @@ object TablesCommands {
 
   case class Table(id: Int, name: String, participants: Int)
 
-  case class AddTable(id: Int, name: String, participants: Int) extends TablesCommand
+  case class AddTable(afterId: Int, id: Int, name: String, participants: Int) extends TablesCommand
 
   case class UpdateTable(id: Int, name: String, participants: Int) extends TablesCommand
 

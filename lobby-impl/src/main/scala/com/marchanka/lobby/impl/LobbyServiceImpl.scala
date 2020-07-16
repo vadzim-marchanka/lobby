@@ -23,13 +23,13 @@ class LobbyServiceImpl(
   private def tablesEntityRef(): EntityRef[TablesCommand] =
     clusterSharding.entityRefFor(TablesState.typeKey, TablesId)
 
-  implicit val timeout = Timeout(5.seconds)
+  implicit val timeout = Timeout(10.seconds)
 
   override def addTable(): ServiceCall[Schemas.AddTable, Done] =
     withRoleAuthorizationChecking(AdminRole)(
       withAcceptedStatusCode { rq =>
         tablesEntityRef()
-          .tell(AddTable(rq.id, rq.name, rq.participants))
+          .tell(AddTable(rq.afterId, rq.id, rq.name, rq.participants))
         Future.successful(Done)
       }
     )
