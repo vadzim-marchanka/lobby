@@ -3,15 +3,16 @@ package com.marchanka.lobby.impl
 import akka.cluster.sharding.typed.scaladsl.Entity
 import com.lightbend.lagom.scaladsl.api.ServiceLocator
 import com.lightbend.lagom.scaladsl.api.ServiceLocator.NoServiceLocator
-import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceComponents
-import com.lightbend.lagom.scaladsl.server._
-import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
-import play.api.libs.ws.ahc.AhcWSComponents
-import com.marchanka.lobby.api.LobbyService
 import com.lightbend.lagom.scaladsl.broker.kafka.LagomKafkaComponents
+import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
+import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceComponents
 import com.lightbend.lagom.scaladsl.playjson.{EmptyJsonSerializerRegistry, JsonSerializerRegistry}
-import com.marchanka.lobby.impl.ActorPersistence.ActorState
+import com.lightbend.lagom.scaladsl.server._
+import com.marchanka.lobby.api.LobbyService
+import com.marchanka.lobby.impl.tables.TablesBehaviour
+import com.marchanka.lobby.impl.tables.TablesPersistence.TablesState
 import com.softwaremill.macwire._
+import play.api.libs.ws.ahc.AhcWSComponents
 
 class LobbyLoader extends LagomApplicationLoader {
 
@@ -37,8 +38,8 @@ abstract class LobbyApplication(context: LagomApplicationContext)
   override lazy val jsonSerializerRegistry: JsonSerializerRegistry = EmptyJsonSerializerRegistry
 
   clusterSharding.init(
-    Entity(ActorState.typeKey)(
-      entityContext => ActorBehaviour.create(entityContext)
+    Entity(TablesState.typeKey)(
+      entityContext => TablesBehaviour.create(entityContext)
     )
   )
 }

@@ -1,7 +1,9 @@
 package com.marchanka.lobby.impl
 
+import akka.Done
 import com.lightbend.lagom.scaladsl.server.LocalServiceLocator
 import com.lightbend.lagom.scaladsl.testkit.ServiceTest
+import com.marchanka.lobby.api.Schemas.{AddTable, Table}
 import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
 import com.marchanka.lobby.api._
 
@@ -20,18 +22,18 @@ class LobbyServiceSpec extends AsyncWordSpec with Matchers with BeforeAndAfterAl
 
   "lobby service" should {
 
-    "say hello" in {
-      client.hello("Alice").invoke().map { answer =>
-        answer should ===("Hello, Alice!")
+    "add table" in {
+      client.addTable().invoke(AddTable(1, "table_name", 4)).map { answer =>
+        answer should === (Done)
       }
     }
 
-    "allow responding with a custom message" in {
+    "return table after adding" in {
       for {
-        _ <- client.useGreeting("Bob").invoke(GreetingMessage("Hi"))
-        answer <- client.hello("Bob").invoke()
+        _ <- client.addTable().invoke(AddTable(1, "table_name", 4))
+        answer <- client.getTables().invoke()
       } yield {
-        answer should ===("Hi, Bob!")
+        answer should ===(Vector(Table(1, "table_name", 4)))
       }
     }
   }
