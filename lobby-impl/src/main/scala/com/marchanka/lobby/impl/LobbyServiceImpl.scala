@@ -36,7 +36,7 @@ class LobbyServiceImpl(
 
   override def updateTable(id: Int): ServiceCall[Schemas.UpdateTable, Done] =
     withRoleAuthorization(AdminRole)(
-      withAcceptedStatusCode{ rq =>
+      withAcceptedStatusCode { rq =>
         tablesEntityRef()
           .tell(UpdateTable(id, rq.name, rq.participants))
         Future.successful(Done)
@@ -59,7 +59,7 @@ class LobbyServiceImpl(
     }
 
   override def getPing(seq: String): ServiceCall[NotUsed, String] =
-    withRoleAuthorization(AdminRole, UserRole){ _ =>
+    withRoleAuthorization(AdminRole, UserRole) { _ =>
       Future.successful(seq)
     }
 

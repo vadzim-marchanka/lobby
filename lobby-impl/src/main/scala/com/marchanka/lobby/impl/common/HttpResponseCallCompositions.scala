@@ -8,8 +8,8 @@ import scala.concurrent.ExecutionContext
 trait HttpResponseCallCompositions {
 
   def withAcceptedStatusCode[Request, Response](
-                                               call: ServerServiceCall[Request, Response]
-                                             )(implicit ec: ExecutionContext): ServerServiceCall[Request, Response] =
+                                                 call: ServerServiceCall[Request, Response]
+                                               )(implicit ec: ExecutionContext): ServerServiceCall[Request, Response] =
     ServerServiceCall { (_, request) =>
       call
         .invoke(request)
