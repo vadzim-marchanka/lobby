@@ -10,7 +10,9 @@ import com.lightbend.lagom.scaladsl.testkit.ServiceTest
 import com.marchanka.lobby.api.Schemas.{AddTable, Table}
 import com.marchanka.lobby.api._
 import com.marchanka.lobby.impl.LobbyServiceSpec.{AdminRole, CallWrapper, UserRole}
-import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AsyncWordSpec
 import play.mvc.Http.HeaderNames.AUTHORIZATION
 
 
