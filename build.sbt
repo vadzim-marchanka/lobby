@@ -1,7 +1,6 @@
 organization in ThisBuild := "com.marchanka"
 version in ThisBuild := "1.0-SNAPSHOT"
 
-// the Scala version that will be used for cross-compiled libraries
 scalaVersion in ThisBuild := "2.13.0"
 
 val macwire = "com.softwaremill.macwire" %% "macros" % "2.3.3" % "provided"
@@ -29,4 +28,9 @@ lazy val `lobby-impl` = (project in file("lobby-impl"))
     )
   )
   .settings(lagomForkedTestSettings)
+  .settings(Seq(
+    Compile / doc / sources := Nil,
+    Compile / packageDoc / publishArtifact := false,
+    publishArtifact in makePom := false
+  )) //setting to turn off not needed actions to speed up artifact packaging
   .dependsOn(`lobby-api`)
