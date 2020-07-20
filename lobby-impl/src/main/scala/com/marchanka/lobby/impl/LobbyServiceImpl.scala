@@ -4,11 +4,12 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
 import akka.{Done, NotUsed}
 import com.lightbend.lagom.scaladsl.api.ServiceCall
+import com.lightbend.lagom.scaladsl.api.transport.{BadRequest, NotFound}
 import com.marchanka.lobby.api.Schemas.Table
 import com.marchanka.lobby.api.{LobbyService, Schemas}
-import com.marchanka.lobby.impl.LobbyServiceImpl.TablesId
+import com.marchanka.lobby.impl.LobbyServiceImpl.{ResultFutureWrapper, TablesId}
+import com.marchanka.lobby.impl.common.AuthorizationChecker
 import com.marchanka.lobby.impl.common.AuthorizationChecker.{AdminRole, UserRole}
-import com.marchanka.lobby.impl.common.{AuthorizationChecker, HttpResponseCallCompositions}
 import com.marchanka.lobby.impl.tables.TablesCommands._
 import com.marchanka.lobby.impl.tables.TablesPersistence.TablesState
 
@@ -18,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class LobbyServiceImpl(
                         clusterSharding: ClusterSharding
                       )(implicit ec: ExecutionContext)
-  extends LobbyService with HttpResponseCallCompositions with AuthorizationChecker {
+  extends LobbyService with AuthorizationChecker {
 
   private def tablesEntityRef(): EntityRef[TablesCommand] =
     clusterSharding.entityRefFor(TablesState.typeKey, TablesId)
@@ -26,29 +27,24 @@ class LobbyServiceImpl(
   implicit val timeout = Timeout(10.seconds)
 
   override def addTable(): ServiceCall[Schemas.AddTable, Done] =
-    withRoleAuthorization(AdminRole)(
-      withAcceptedStatusCode { rq =>
-        tablesEntityRef()
-          .tell(AddTable(rq.afterId, rq.id, rq.name, rq.participants))
-        Future.successful(Done)
-      }
+    withRoleAuthorization(AdminRole)(rq =>
+      tablesEntityRef()
+        .ask[OperationResult](replyTo => AddTable(rq.afterId, rq.id, rq.name, rq.participants, replyTo))
+        .handleResult()
     )
 
   override def updateTable(id: Int): ServiceCall[Schemas.UpdateTable, Done] =
-    withRoleAuthorization(AdminRole)(
-      withAcceptedStatusCode { rq =>
-        tablesEntityRef()
-          .tell(UpdateTable(id, rq.name, rq.participants))
-        Future.successful(Done)
-      }
+    withRoleAuthorization(AdminRole)(rq =>
+      tablesEntityRef()
+        .ask[OperationResult](replyTo => UpdateTable(id, rq.name, rq.participants, replyTo))
+        .handleResult()
     )
 
   override def removeTable(id: Int): ServiceCall[NotUsed, Done] =
-    withRoleAuthorization(AdminRole)(
-      withAcceptedStatusCode { _ =>
-        tablesEntityRef().tell(RemoveTable(id))
-        Future.successful(Done)
-      }
+    withRoleAuthorization(AdminRole)(_ =>
+      tablesEntityRef()
+        .ask[OperationResult](replyTo => RemoveTable(id, replyTo))
+        .handleResult()
     )
 
   override def getTables(): ServiceCall[NotUsed, Vector[Schemas.Table]] =
@@ -67,4 +63,15 @@ class LobbyServiceImpl(
 
 object LobbyServiceImpl {
   val TablesId = "1"
+
+  implicit class ResultFutureWrapper(futureResult: Future[OperationResult]) {
+    def handleResult()(implicit ec: ExecutionContext): Future[Done] = {
+      futureResult.map {
+        case SuccessfulOperation => Done
+        case FailedOperationWithBadRequest(message) => throw BadRequest(message)
+        case FailedOperationWithNotFound => throw NotFound("The given entity does not exist")
+      }
+    }
+  }
+
 }

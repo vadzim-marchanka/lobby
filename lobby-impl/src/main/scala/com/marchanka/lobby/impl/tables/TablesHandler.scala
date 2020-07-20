@@ -9,12 +9,22 @@ trait TablesHandler {
 
   def applyCommand(cmd: TablesCommand): ReplyEffect[TablesEvent, TablesState] =
     cmd match {
-      case AddTable(afterId, id, name, participants) =>
-        Effect.persist(TableAdded(afterId, id, name, participants)).thenNoReply()
-      case UpdateTable(id, name, participants) =>
-        Effect.persist(TableUpdated(id, name, participants)).thenNoReply()
-      case RemoveTable(id) =>
-        Effect.persist(TableRemoved(id)).thenNoReply()
+      case AddTable(afterId, id, name, participants, actorRef) =>
+        (this.tables.find(_.id == id), this.tables.find(_.id == afterId)) match {
+          case (Some(_), _) => Effect.reply(actorRef)(FailedOperationWithBadRequest("The table with given ID exist"))
+          case (None, None) if afterId != -1 => Effect.reply(actorRef)(FailedOperationWithBadRequest("There table with afterId does not exist"))
+          case _ => Effect.persist(TableAdded(afterId, id, name, participants)).thenReply(actorRef)(_ => SuccessfulOperation)
+        }
+      case UpdateTable(id, name, participants, actorRef) =>
+        this.tables.find(_.id == id) match {
+          case None => Effect.reply(actorRef)(FailedOperationWithNotFound)
+          case _ => Effect.persist(TableUpdated(id, name, participants)).thenReply(actorRef)(_ => SuccessfulOperation)
+        }
+      case RemoveTable(id, actorRef) =>
+        this.tables.find(_.id == id) match {
+          case None => Effect.reply(actorRef)(FailedOperationWithNotFound)
+          case _ => Effect.persist(TableRemoved(id)).thenReply(actorRef)(_ => SuccessfulOperation)
+        }
       case GetTables(actorRef) =>
         Effect.reply(actorRef)(Tables(this.tables.map(t => TablesCommands.Table(t.id, t.name, t.participants))))
     }
