@@ -13,7 +13,6 @@ bin
 logs
 
 .toDelete
-project
 /target/
 .sbtopts
 .idea/
