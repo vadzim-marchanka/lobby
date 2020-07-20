@@ -40,7 +40,7 @@ class LobbyServiceSpec extends AsyncWordSpec with Matchers with BeforeAndAfterAl
         _ <- client.addTable().withRole(AdminRole).invoke(AddTable(-1, 1, "table_name", 4))
         answer <- client.getTables().withRole(UserRole).invoke()
       } yield {
-        answer should ===(Vector(Table(1, "table_name", 4)))
+        answer should contain(Table(1, "table_name", 4))
       }
     }
   }
