@@ -7,13 +7,15 @@ import akka.Done
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.server.LocalServiceLocator
 import com.lightbend.lagom.scaladsl.testkit.ServiceTest
-import com.marchanka.lobby.api.Schemas.{AddTable, Table}
+import com.marchanka.lobby.api.Schemas.{AddTable, Table, UpdateTable}
 import com.marchanka.lobby.api._
 import com.marchanka.lobby.impl.LobbyServiceSpec.{AdminRole, CallWrapper, UserRole}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import play.mvc.Http.HeaderNames.AUTHORIZATION
+
+import scala.util.Random
 
 
 class LobbyServiceSpec extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
@@ -32,20 +34,47 @@ class LobbyServiceSpec extends AsyncWordSpec with Matchers with BeforeAndAfterAl
   "lobby service" should {
 
     "add table" in {
-      client.addTable().withRole(AdminRole).invoke(AddTable(-1, 1, "table_name", 4)).map { answer =>
+      val id = generateTableId()
+      client.addTable().withRole(AdminRole).invoke(AddTable(-1, id, "table_name", 4)).map { answer =>
         answer should ===(Done)
       }
     }
 
     "return table after adding" in {
+      val id = generateTableId()
       for {
-        _ <- client.addTable().withRole(AdminRole).invoke(AddTable(-1, 1, "table_name", 4))
+        _ <- client.addTable().withRole(AdminRole).invoke(AddTable(-1, id, "table_name", 4))
         answer <- client.getTables().withRole(UserRole).invoke()
       } yield {
-        answer should contain(Table(1, "table_name", 4))
+        answer should contain(Table(id, "table_name", 4))
       }
     }
+
+    "update table" in {
+      val id = generateTableId()
+      for {
+        _ <- client.addTable().withRole(AdminRole).invoke(AddTable(-1, id, "table_name", 4))
+        _ <- client.updateTable(id).withRole(AdminRole).invoke(UpdateTable("updated table_name", 10))
+        answer <- client.getTables().withRole(UserRole).invoke()
+      } yield {
+        answer should contain(Table(id, "updated table_name", 10))
+      }
+    }
+
+    "delete table" in {
+      val id = generateTableId()
+      for {
+        _ <- client.addTable().withRole(AdminRole).invoke(AddTable(-1, id, "table_name", 4))
+        _ <- client.removeTable(id).withRole(AdminRole).invoke()
+        answer <- client.getTables().withRole(UserRole).invoke()
+      } yield {
+        answer.find(_.id == id) should ===(None)
+      }
+    }
+
   }
+
+  private def generateTableId() = Random.nextInt(100000)
 
 }
 
